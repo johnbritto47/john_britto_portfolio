@@ -4,6 +4,20 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
+const VISITOR_COUNT_FILE = path.join(ROOT, 'visitor-count.json');
+
+let visitorCount = 0;
+try {
+  const savedCount = JSON.parse(fs.readFileSync(VISITOR_COUNT_FILE, 'utf8')).count;
+  if (!Number.isSafeInteger(savedCount) || savedCount < 0) {
+    throw new Error('Saved visitor count must be a non-negative integer');
+  }
+  visitorCount = savedCount;
+} catch (error) {
+  if (error.code !== 'ENOENT') {
+    throw error;
+  }
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -21,6 +35,32 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  const requestPath = req.url.split('?')[0];
+
+  if (requestPath === '/api/visitors') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8', Allow: 'POST' });
+      res.end(JSON.stringify({ error: 'Method not allowed' }));
+      return;
+    }
+
+    const nextCount = visitorCount + 1;
+    try {
+      fs.writeFileSync(VISITOR_COUNT_FILE, JSON.stringify({ count: nextCount }));
+      visitorCount = nextCount;
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store'
+      });
+      res.end(JSON.stringify({ count: visitorCount }));
+    } catch (error) {
+      console.error('Failed to save visitor count:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'Unable to save visitor count' }));
+    }
+    return;
+  }
+
   const urlPath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
   const safePath = path.normalize(urlPath).replace(/^\.+[\\/]+/, '');
   const filePath = path.join(ROOT, safePath);

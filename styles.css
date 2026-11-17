@@ -1036,6 +1036,11 @@ h1 {
   color: var(--muted);
 }
 
+.visitor-count {
+  margin: 0;
+  white-space: nowrap;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1611,6 +1616,11 @@ body::after {
   filter: grayscale(1) contrast(1.02);
   object-fit: cover;
   object-position: center 55%;
+  transition: filter 300ms ease;
+}
+
+.profile-badge:hover img {
+  filter: grayscale(0) contrast(1.02) saturate(1.05);
 }
 
 .profile-caption {

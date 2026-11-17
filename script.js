@@ -6,6 +6,27 @@ document.addEventListener('DOMContentLoaded', () => {
     yearNode.textContent = new Date().getFullYear();
   }
 
+  const visitorCountNode = document.getElementById('visitor-count');
+  if (visitorCountNode) {
+    fetch('/api/visitors', { method: 'POST' })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Visitor count request failed with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!Number.isSafeInteger(data.count) || data.count < 0) {
+          throw new Error('Visitor count response was invalid');
+        }
+        visitorCountNode.textContent = data.count.toLocaleString();
+      })
+      .catch((error) => {
+        visitorCountNode.textContent = 'Unavailable';
+        console.error('Unable to load visitor count:', error);
+      });
+  }
+
   const revealItems = document.querySelectorAll(
     '.hero-copy, .hero-card, .hero-mini-card, .two-col > *, .section-heading, .service-card, ' +
       '.ai-panel-copy, .ai-console, .timeline-item, .skill-card, .edu-item, .competencies span, ' +
